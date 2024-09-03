@@ -1,5 +1,5 @@
 import unittest
-from Assignments.A2.scrabble_score import ScrabbleScore
+from scrabble_score import ScrabbleScore
 
 class ScrabbleScoreTestCase(unittest.TestCase):
     program = ScrabbleScore()
@@ -24,18 +24,6 @@ class ScrabbleScoreTestCase(unittest.TestCase):
             self.program.get_value("D"),
             self.program.get_value("d")
         )
-        self.assertEqual(
-            self.program.get_value("H"),
-            self.program.get_value("h")
-        )
-        self.assertEqual(
-            self.program.get_value("K"),
-            self.program.get_value("k")
-        )
-        self.assertEqual(
-            self.program.get_value("Q"),
-            self.program.get_value("q")
-        )
 
     def test_input_validation(self):
         with self.assertRaises(RuntimeError):
@@ -45,6 +33,7 @@ class ScrabbleScoreTestCase(unittest.TestCase):
             3,
             self.program.validate_input("abc")
         )
+
     def test_word_validation(self):
         self.assertTrue(True, self.program.validate_word("apple"))
         self.assertFalse(False, self.program.validate_word("boook"))

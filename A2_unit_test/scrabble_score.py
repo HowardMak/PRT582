@@ -3,10 +3,7 @@
 import random
 import time
 import threading
-import nltk
 from nltk.corpus import words
-
-nltk.download('words')
 
 
 class ScrabbleScore:
@@ -111,9 +108,9 @@ class ScrabbleScore:
             stop_event (threading.Event): event object
         """
         while seconds and not stop_event.is_set():
-            # mins, secs = divmod(seconds, 60)
-            # timer = f'{mins: 02d}:{secs: 02d}'
-            # print(timer, end="\r")
+            mins, secs = divmod(seconds, 60)
+            timer = f'{str(mins).zfill(2)}:{str(secs).zfill(2)}'
+            print(timer, end="\r")
             time.sleep(1)
             seconds -= 1
 
@@ -128,21 +125,30 @@ class ScrabbleScore:
             stop_event (threading.Event): event object
 
         Returns:
-            int: score
+            [int, bool]: score, is valid
         """
         required_letter_cnt = random.randint(0, 10)
-        user_input = input(
-            "Please input a word with "
-            f"{required_letter_cnt} "
-            "words in 15 seconds:\n"
-        )
-        stop_event.set()
-        if self.validate_input(user_input) != required_letter_cnt:
-            print("You did not enter the word as required, you get 0 points!")
-            return 0
-        if not self.validate_word(user_input):
-            print("The word you input is not a valid word from the dictionary")
-        return self.add_up(user_input)
+        is_valid = True
+        try:
+            user_input = input(
+                "Please input a word with "
+                f"{required_letter_cnt} "
+                "words in 15 seconds:\n"
+            )
+            stop_event.set()
+            if self.validate_input(user_input) != required_letter_cnt:
+                raise RuntimeError(
+                    "You did not enter as required, you get 0 points!"
+                    )
+            if not self.validate_word(user_input):
+                raise RuntimeError(
+                    "The word is not a valid word from the dictionary"
+                    )
+            return [self.add_up(user_input), is_valid]
+        except RuntimeError as err:
+            print(err)
+            is_valid = False
+            return [0, is_valid]
 
     def play_for_one_round(self):
         """
@@ -158,26 +164,24 @@ class ScrabbleScore:
         )
         timer_thread.start()
         begin_time = time.time()
-        scores = self.get_user_input(stop_event)
+        score, is_valid = self.get_user_input(stop_event)
         used_time = time.time() - begin_time
         timer_thread.join()
 
-        print(f"You got: {scores} scores, used: {used_time: 02}s")
-        return [scores, min(15.0, used_time)]
+        print(f"You got: {score} scores, used: {used_time: .02f}s")
+        return [score, min(15.0, used_time) if is_valid else 15]
 
     def play(self):
         """
         main program
         """
         rounds = 1
-        tot_score = 0
-        tot_time = 0
+        tot_score, tot_time = 0, 0
         while rounds <= 10:
             user_option = input(
                 f"Round: {rounds}\n"
-                "Please select: \n"
-                "1. Play\n"
-                "2.Exit\n"
+                "Please select: \n1.Play;\n2.Exit.\n"
+                "Select: "
             )
             if int(user_option) == 1:
                 try:
@@ -189,13 +193,15 @@ class ScrabbleScore:
                     print(runtime_error)
                     continue
             elif int(user_option) == 2:
+                print("Exited")
                 break
             else:
                 print("Incorrect input! Please re-enter!")
                 time.sleep(1)
-            print("=" * 20)
+                continue
+            print("=" * 40)
 
         print(
             f"Your totol score is {tot_score},"
-            "total used time is {tot_time}s"
+            f"total used time is {tot_time}s"
         )
